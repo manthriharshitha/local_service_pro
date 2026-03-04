@@ -27,3 +27,4 @@ frontend/dist/
 
 # Misc
 *.iml
+dashboard_smoke_results.json
