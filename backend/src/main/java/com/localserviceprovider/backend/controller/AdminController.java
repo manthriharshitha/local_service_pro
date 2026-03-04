@@ -112,9 +112,20 @@ public class AdminController {
                                             @RequestBody AdminUpdateUserRoleRequest request,
                                             @AuthenticationPrincipal User currentAdmin) {
         User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        if (request.getRole() == null) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Role is required"));
+        }
         if (currentAdmin.getId().equals(user.getId()) && request.getRole() != Role.ADMIN) {
             return ResponseEntity.badRequest().body(Map.of("message", "Admin cannot demote themselves"));
         }
+
+        boolean isAllowedDemotion = user.getRole() == Role.PROVIDER && request.getRole() == Role.USER;
+        boolean isNoOp = user.getRole() == request.getRole();
+
+        if (!isAllowedDemotion && !isNoOp) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Only provider to user demotion is allowed"));
+        }
+
         user.setRole(request.getRole());
         userRepository.save(user);
         return ResponseEntity.ok(Map.of("message", "User role updated"));

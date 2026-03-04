@@ -5,7 +5,19 @@ import { useAuth } from '../context/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import LoadingSpinner from '../components/LoadingSpinner';
 
-const categories = ['ALL', 'AC_REPAIR', 'PLUMBING', 'ELECTRICAL', 'CLEANING', 'PAINTING'];
+const categories = [
+  'ALL',
+  'AC_REPAIR',
+  'PLUMBING',
+  'ELECTRICAL',
+  'CLEANING',
+  'PAINTING',
+  'HAIR_CUT',
+  'MAKEUP',
+  'NAILS',
+  'ROOM_MAKEOVERS',
+  'OTHER_SERVICES',
+];
 
 function formatCategory(value) {
   return value ? value.replaceAll('_', ' ') : '-';
@@ -63,8 +75,10 @@ export default function UserDashboard() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const loadData = async () => {
-    setLoading(true);
+  const loadData = async (showLoader = true) => {
+    if (showLoader) {
+      setLoading(true);
+    }
     const categoryParam = category === 'ALL' ? '' : category;
     const sortParam = sort === 'none' ? '' : sort;
 
@@ -91,13 +105,17 @@ export default function UserDashboard() {
         setProfile(profileRes.data);
       }
     } finally {
-      setLoading(false);
+      if (showLoader) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    loadData();
-    const timer = setInterval(loadData, 15000);
+    loadData(true);
+    const timer = setInterval(() => {
+      loadData(false);
+    }, 15000);
     return () => clearInterval(timer);
   }, [search, category, sort, profileDirty]);
 

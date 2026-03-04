@@ -1,6 +1,7 @@
 package com.localserviceprovider.backend.controller;
 
 import com.localserviceprovider.backend.dto.BookingStatusUpdateRequest;
+import com.localserviceprovider.backend.dto.ChangePasswordRequest;
 import com.localserviceprovider.backend.dto.ProviderAvailabilityRequest;
 import com.localserviceprovider.backend.dto.ProviderAvailabilityResponse;
 import com.localserviceprovider.backend.dto.ProviderOverviewResponse;
@@ -8,6 +9,8 @@ import com.localserviceprovider.backend.dto.ProviderReviewResponse;
 import com.localserviceprovider.backend.dto.ProviderReviewsSummaryResponse;
 import com.localserviceprovider.backend.dto.ServiceRequest;
 import com.localserviceprovider.backend.dto.ServiceStatusUpdateRequest;
+import com.localserviceprovider.backend.dto.UpdateUserProfileRequest;
+import com.localserviceprovider.backend.dto.UserProfileResponse;
 import com.localserviceprovider.backend.model.Booking;
 import com.localserviceprovider.backend.model.BookingStatus;
 import com.localserviceprovider.backend.model.PaymentStatus;
@@ -23,6 +26,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -40,15 +44,18 @@ public class ProviderController {
     private final BookingRepository bookingRepository;
     private final ReviewRepository reviewRepository;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public ProviderController(ServiceRepository serviceRepository,
                               BookingRepository bookingRepository,
                               ReviewRepository reviewRepository,
-                              UserRepository userRepository) {
+                              UserRepository userRepository,
+                              PasswordEncoder passwordEncoder) {
         this.serviceRepository = serviceRepository;
         this.bookingRepository = bookingRepository;
         this.reviewRepository = reviewRepository;
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @GetMapping("/overview")
@@ -229,6 +236,42 @@ public class ProviderController {
                 provider.getWorkingHours(),
                 Boolean.TRUE.equals(provider.getEmergencyServiceEnabled())
         );
+    }
+
+    @GetMapping("/profile")
+    @PreAuthorize("hasRole('PROVIDER')")
+    public UserProfileResponse getProfile(@AuthenticationPrincipal User currentUser) {
+        User provider = getProvider(currentUser);
+        return new UserProfileResponse(provider.getName(), provider.getEmail(), provider.getPhone());
+    }
+
+    @PutMapping("/profile")
+    @PreAuthorize("hasRole('PROVIDER')")
+    public ResponseEntity<?> updateProfile(@RequestBody UpdateUserProfileRequest request,
+                                           @AuthenticationPrincipal User currentUser) {
+        User provider = getProvider(currentUser);
+        if (request.getName() != null && !request.getName().isBlank()) {
+            provider.setName(request.getName());
+        }
+        userRepository.save(provider);
+        return ResponseEntity.ok(Map.of("message", "Profile updated"));
+    }
+
+    @PutMapping("/change-password")
+    @PreAuthorize("hasRole('PROVIDER')")
+    public ResponseEntity<?> changePassword(@RequestBody ChangePasswordRequest request,
+                                            @AuthenticationPrincipal User currentUser) {
+        User provider = getProvider(currentUser);
+        if (request.getCurrentPassword() == null || !passwordEncoder.matches(request.getCurrentPassword(), provider.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");
+        }
+        if (request.getNewPassword() == null || request.getNewPassword().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "New password is required");
+        }
+
+        provider.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(provider);
+        return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
     }
 
     @PutMapping("/availability")

@@ -287,7 +287,6 @@ export default function AdminDashboard() {
                     <button type="button" className="btn-warning" onClick={() => updateUserStatus(user.id, user.status === 'ACTIVE' ? 'BLOCKED' : 'ACTIVE')}>
                       {user.status === 'ACTIVE' ? 'Block' : 'Unblock'}
                     </button>
-                    {user.role === 'USER' && <button type="button" className="btn-info" onClick={() => updateUserRole(user.id, 'PROVIDER')}>Promote</button>}
                     {user.role === 'PROVIDER' && <button type="button" className="btn-secondary" onClick={() => updateUserRole(user.id, 'USER')}>Demote</button>}
                     <button type="button" onClick={() => resetPassword(user.id)}>Reset Password</button>
                   </div>
@@ -306,6 +305,11 @@ export default function AdminDashboard() {
                 <option value="ELECTRICAL">Electrical</option>
                 <option value="CLEANING">Cleaning</option>
                 <option value="PAINTING">Painting</option>
+                <option value="HAIR_CUT">Hair Cut</option>
+                <option value="MAKEUP">Makeup</option>
+                <option value="NAILS">Nails</option>
+                <option value="ROOM_MAKEOVERS">Room Makeovers</option>
+                <option value="OTHER_SERVICES">Other Services</option>
               </select>
               <input placeholder="Filter by provider" value={serviceFilters.provider} onChange={(event) => setServiceFilters({ ...serviceFilters, provider: event.target.value })} />
               <select value={serviceFilters.sort} onChange={(event) => setServiceFilters({ ...serviceFilters, sort: event.target.value })}>
@@ -347,8 +351,14 @@ export default function AdminDashboard() {
                 {bookingStatusOptions.map((status) => <option key={status} value={status}>{status}</option>)}
               </select>
               <input placeholder="Filter by provider" value={bookingFilters.provider} onChange={(event) => setBookingFilters({ ...bookingFilters, provider: event.target.value })} />
-              <input type="date" value={bookingFilters.fromDate} onChange={(event) => setBookingFilters({ ...bookingFilters, fromDate: event.target.value })} />
-              <input type="date" value={bookingFilters.toDate} onChange={(event) => setBookingFilters({ ...bookingFilters, toDate: event.target.value })} />
+              <div className="field" style={{ minWidth: 170 }}>
+                <label>From</label>
+                <input type="date" value={bookingFilters.fromDate} onChange={(event) => setBookingFilters({ ...bookingFilters, fromDate: event.target.value })} />
+              </div>
+              <div className="field" style={{ minWidth: 170 }}>
+                <label>To</label>
+                <input type="date" value={bookingFilters.toDate} onChange={(event) => setBookingFilters({ ...bookingFilters, toDate: event.target.value })} />
+              </div>
             </div>
 
             <div className="card-grid">

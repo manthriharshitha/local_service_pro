@@ -5,5 +5,10 @@ public enum ServiceCategory {
     PLUMBING,
     ELECTRICAL,
     CLEANING,
-    PAINTING
+    PAINTING,
+    HAIR_CUT,
+    MAKEUP,
+    NAILS,
+    ROOM_MAKEOVERS,
+    OTHER_SERVICES
 }

@@ -11,6 +11,11 @@ const categories = [
   { value: 'ELECTRICAL', label: 'Electrical' },
   { value: 'CLEANING', label: 'Bathroom / Home Cleaning' },
   { value: 'PAINTING', label: 'Painting' },
+  { value: 'HAIR_CUT', label: 'Hair Cut' },
+  { value: 'MAKEUP', label: 'Makeup' },
+  { value: 'NAILS', label: 'Nails' },
+  { value: 'ROOM_MAKEOVERS', label: 'Room Makeovers' },
+  { value: 'OTHER_SERVICES', label: 'Other Services' },
 ];
 
 const bookingStatuses = ['PENDING', 'ACCEPTED', 'REJECTED', 'COMPLETED', 'CANCELLED'];
@@ -73,6 +78,8 @@ export default function ProviderDashboard() {
   const [reviews, setReviews] = useState([]);
   const [averageRating, setAverageRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
+  const [profile, setProfile] = useState({ name: '', email: '' });
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '' });
   const [loading, setLoading] = useState(true);
 
   const [form, setForm] = useState({
@@ -96,12 +103,13 @@ export default function ProviderDashboard() {
   const loadDashboard = async () => {
     setLoading(true);
     try {
-      const [overviewRes, servicesRes, bookingsRes, availabilityRes, reviewsRes] = await Promise.all([
+      const [overviewRes, servicesRes, bookingsRes, availabilityRes, reviewsRes, profileRes] = await Promise.all([
         axiosClient.get('/provider/overview'),
         axiosClient.get('/provider/services'),
         axiosClient.get('/provider/bookings'),
         axiosClient.get('/provider/availability'),
         axiosClient.get('/provider/reviews'),
+        axiosClient.get('/provider/profile'),
       ]);
 
       setOverview(overviewRes.data);
@@ -115,6 +123,10 @@ export default function ProviderDashboard() {
       setReviews(reviewsRes.data.reviews || []);
       setAverageRating(reviewsRes.data.averageRating || 0);
       setTotalReviews(reviewsRes.data.totalReviews || 0);
+      setProfile({
+        name: profileRes.data.name || '',
+        email: profileRes.data.email || '',
+      });
     } finally {
       setLoading(false);
     }
@@ -221,6 +233,34 @@ export default function ProviderDashboard() {
       setSuccess('Availability updated successfully.');
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update availability.');
+    }
+  };
+
+  const handleUpdateProfile = async (event) => {
+    event.preventDefault();
+    setError('');
+    setSuccess('');
+    try {
+      await axiosClient.put('/provider/profile', {
+        name: profile.name,
+      });
+      setSuccess('Profile updated successfully.');
+      await loadDashboard();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update profile.');
+    }
+  };
+
+  const handleChangePassword = async (event) => {
+    event.preventDefault();
+    setError('');
+    setSuccess('');
+    try {
+      await axiosClient.put('/provider/change-password', passwordForm);
+      setPasswordForm({ currentPassword: '', newPassword: '' });
+      setSuccess('Password changed successfully.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to change password.');
     }
   };
 
@@ -432,6 +472,44 @@ export default function ProviderDashboard() {
 
           <section id="profile" className="section-card">
             <h3>Profile & Availability</h3>
+            <form className="form" onSubmit={handleUpdateProfile}>
+              <div className="form-grid">
+                <div className="field">
+                  <label>Username</label>
+                  <input value={profile.name} onChange={(event) => setProfile({ ...profile, name: event.target.value })} required />
+                </div>
+                <div className="field">
+                  <label>Email</label>
+                  <input value={profile.email} disabled />
+                </div>
+              </div>
+              <button type="submit">Update Username</button>
+            </form>
+
+            <form className="form" onSubmit={handleChangePassword} style={{ marginTop: 12 }}>
+              <div className="form-grid">
+                <div className="field">
+                  <label>Current Password</label>
+                  <input
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(event) => setPasswordForm({ ...passwordForm, currentPassword: event.target.value })}
+                    required
+                  />
+                </div>
+                <div className="field">
+                  <label>New Password</label>
+                  <input
+                    type="password"
+                    value={passwordForm.newPassword}
+                    onChange={(event) => setPasswordForm({ ...passwordForm, newPassword: event.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              <button type="submit">Change Password</button>
+            </form>
+
             <form className="form" onSubmit={handleSaveAvailability}>
               <div className="form-grid">
                 <div className="field">

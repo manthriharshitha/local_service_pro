@@ -9,6 +9,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -69,7 +72,22 @@ public class JwtUtil {
     }
 
     private SecretKey getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSecret);
+        byte[] keyBytes;
+
+        try {
+            keyBytes = Decoders.BASE64.decode(jwtSecret);
+        } catch (RuntimeException ex) {
+            keyBytes = jwtSecret.getBytes(StandardCharsets.UTF_8);
+        }
+
+        if (keyBytes.length < 32) {
+            try {
+                keyBytes = MessageDigest.getInstance("SHA-256").digest(keyBytes);
+            } catch (NoSuchAlgorithmException ex) {
+                throw new IllegalStateException("Unable to initialize JWT signing key", ex);
+            }
+        }
+
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
